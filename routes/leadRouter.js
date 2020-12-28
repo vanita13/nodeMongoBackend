@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const Leaders = require('../models/leaders');
+var authenticate = require('../authenticate');
 
 const leadRouter = express.Router();
 
@@ -17,7 +18,7 @@ leadRouter.route('/')
     },(err)=>next(err))
     .catch((err)=>next(err));
 })
-.post((req,res,next)=>{
+.post(authenticate.verifyUser,(req,res,next)=>{
     Leaders.create(req.body)
     .then((leader)=>{
         res.statusCode = 200;
@@ -26,11 +27,11 @@ leadRouter.route('/')
     },(err)=>next(err))
     .catch((err)=>next(err));
 })
-.put((req,res,next)=>{
+.put(authenticate.verifyUser,(req,res,next)=>{
     res.statusCode = 403
     res.end('put operation not allowed');
 })
-.delete((req,res,next)=>{
+.delete(authenticate.verifyUser,(req,res,next)=>{
     Leaders.remove({})
     .then((resp)=>{
         res.statusCode = 200;
@@ -50,11 +51,11 @@ leadRouter.route('/:leadId')
     },(err)=>next(err))
     .catch((err)=>next(err));
 })
-.post((req,res,next)=>{
+.post(authenticate.verifyUser,(req,res,next)=>{
     res.statusCode = 403
     res.end('operation not allowed');
 })
-.put((req,res,next)=>{
+.put(authenticate.verifyUser,(req,res,next)=>{
     Leaders.findByIdAndUpdate(req.params.leadId,{
         $set : req.body},
         {new:true}
@@ -66,7 +67,7 @@ leadRouter.route('/:leadId')
     },(err)=>next(err))
     .catch((err)=>next(err));
 })
-.delete((req,res,next)=>{
+.delete(authenticate.verifyUser,(req,res,next)=>{
     Leaders.findByIdAndRemove(req.params.leadId)
     .then((resp)=>{
         res.statusCode = 200;
