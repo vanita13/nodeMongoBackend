@@ -18,7 +18,7 @@ leadRouter.route('/')
     },(err)=>next(err))
     .catch((err)=>next(err));
 })
-.post(authenticate.verifyUser,(req,res,next)=>{
+.post(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
     Leaders.create(req.body)
     .then((leader)=>{
         res.statusCode = 200;
@@ -31,7 +31,7 @@ leadRouter.route('/')
     res.statusCode = 403
     res.end('put operation not allowed');
 })
-.delete(authenticate.verifyUser,(req,res,next)=>{
+.delete(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
     Leaders.remove({})
     .then((resp)=>{
         res.statusCode = 200;
@@ -55,7 +55,7 @@ leadRouter.route('/:leadId')
     res.statusCode = 403
     res.end('operation not allowed');
 })
-.put(authenticate.verifyUser,(req,res,next)=>{
+.put(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
     Leaders.findByIdAndUpdate(req.params.leadId,{
         $set : req.body},
         {new:true}
@@ -67,7 +67,7 @@ leadRouter.route('/:leadId')
     },(err)=>next(err))
     .catch((err)=>next(err));
 })
-.delete(authenticate.verifyUser,(req,res,next)=>{
+.delete(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
     Leaders.findByIdAndRemove(req.params.leadId)
     .then((resp)=>{
         res.statusCode = 200;
