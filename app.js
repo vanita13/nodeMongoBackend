@@ -15,6 +15,7 @@ var dishRouter  = require('./routes/dishRouter');
 var leadRouter  = require('./routes/leadRouter');
 var promoRouter = require('./routes/promoRouter');
 var uploadRouter = require('./routes/uploadRouter');
+var favRouter    = require('./routes/favRouter');
 
 const mongoose = require('mongoose');
 const Dishes = require('./models/dishes');
@@ -70,6 +71,7 @@ app.use('/dishes',dishRouter);
 app.use('/leaders',leadRouter);
 app.use('/promotions',promoRouter);
 app.use('/imageUpload',uploadRouter);
+app.use('/favourites',favRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
