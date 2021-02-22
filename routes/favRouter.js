@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
 const Favorites = require('../models/favourite');
-const Dishes = require('../models/dishes');
+const Products = require('../models/product');
 var authenticate = require('../authenticate');
 const cors = require('./cors');
 
@@ -17,7 +17,7 @@ favRouter.route('/')
 .get(cors.corsWithOptions,authenticate.verifyUser, (req,res,next) => {
     Favorites.findOne({user: req.user._id})
     .populate('user')
-    .populate('dishes')
+    .populate('products')
     .then((favorites) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -30,8 +30,8 @@ favRouter.route('/')
     .then((favorite) => {
         if (favorite) {
             for (var i=0; i<req.body.length; i++) {
-                if (favorite.dishes.indexOf(req.body[i]._id) === -1) {
-                    favorite.dishes.push(req.body[i]._id);
+                if (favorite.products.indexOf(req.body[i]._id) === -1) {
+                    favorite.products.push(req.body[i]._id);
                 }
             }
             favorite.save()
@@ -43,7 +43,7 @@ favRouter.route('/')
             }, (err) => next(err)); 
         }
         else {
-            Favorites.create({"user": req.user._id, "dishes": req.body})
+            Favorites.create({"user": req.user._id, "products": req.body})
             .then((favorite) => {
                 console.log('Favorite Created ', favorite);
                 res.statusCode = 200;
@@ -68,18 +68,18 @@ favRouter.route('/')
     .catch((err) => next(err));   
 });
 
-favRouter.route('/:dishId')
+favRouter.route('/:Id')
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
 .get(cors.corsWithOptions, authenticate.verifyUser, (req,res,next) => {
     res.statusCode = 403;
-    res.end('GET operation not supported on /favorites/'+ req.params.dishId);
+    res.end('GET operation not supported on /favorites/'+ req.params.Id);
 })
 .post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Favorites.findOne({user: req.user._id})
     .then((favorite) => {
         if (favorite) {            
-            if (favorite.dishes.indexOf(req.params.dishId) === -1) {
-                favorite.dishes.push(req.params.dishId)
+            if (favorite.products.indexOf(req.params.Id) === -1) {
+                favorite.products.push(req.params.Id)
                 favorite.save()
                 .then((favorite) => {
                     console.log('Favorite Created ', favorite);
@@ -90,7 +90,7 @@ favRouter.route('/:dishId')
             }
         }
         else {
-            Favorites.create({"user": req.user._id, "dishes": [req.params.dishId]})
+            Favorites.create({"user": req.user._id, "products": [req.params.Id]})
             .then((favorite) => {
                 console.log('Favorite Created ', favorite);
                 res.statusCode = 200;
@@ -103,15 +103,15 @@ favRouter.route('/:dishId')
 })
 .put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     res.statusCode = 403;
-    res.end('PUT operation not supported on /favorites/'+ req.params.dishId);
+    res.end('PUT operation not supported on /favorites/'+ req.params.Id);
 })
 .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Favorites.findOne({user: req.user._id})
     .then((favorite) => {
         if (favorite) {            
-            index = favorite.dishes.indexOf(req.params.dishId);
+            index = favorite.products.indexOf(req.params.Id);
             if (index >= 0) {
-                favorite.dishes.splice(index, 1);
+                favorite.products.splice(index, 1);
                 favorite.save()
                 .then((favorite) => {
                     console.log('Favorite Deleted ', favorite);
@@ -121,7 +121,7 @@ favRouter.route('/:dishId')
                 }, (err) => next(err));
             }
             else {
-                err = new Error('Dish ' + req.params.dishId + ' not found');
+                err = new Error('product ' + req.params.Id + ' not found');
                 err.status = 404;
                 return next(err);
             }

@@ -22,7 +22,7 @@ const commentSchema = new schema({
     timestamps:true
 })
 
-const dishSchema = new schema({
+const productSchema = new schema({
     name: {
         type: String,
         required: true,
@@ -40,23 +40,19 @@ const dishSchema = new schema({
         type: String,
         required: true
     },
-    label: {
-        type: String,
-        default: ''
-    },
     price: {
         type: Currency,
         required: true,
         min: 0
     },
-    featured: {
-        type: Boolean,
-        default:false      
+    inStock : {
+        type: Number,
+        required: true,
     },
     comments:[commentSchema]
 }, {
     timestamps: true
 });
 
-var dishes = mongoose.model('dish',dishSchema);
-module.exports = dishes;
+var products = mongoose.model('product',productSchema);
+module.exports = products;

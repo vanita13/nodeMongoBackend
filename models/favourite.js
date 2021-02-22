@@ -8,9 +8,9 @@ const favSchema = new schema({
         type: mongoose.Schema.Types.ObjectId,
         ref : 'User'
     },
-    dishes:[{
+    products:[{
         type:mongoose.Schema.Types.ObjectId,
-        ref : 'dish'
+        ref : 'product'
     }]
     
 },{

@@ -11,14 +11,15 @@ var config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-var dishRouter  = require('./routes/dishRouter');
-var leadRouter  = require('./routes/leadRouter');
-var promoRouter = require('./routes/promoRouter');
+var productRouter  = require('./routes/productRouter');
 var uploadRouter = require('./routes/uploadRouter');
 var favRouter    = require('./routes/favRouter');
+var cartRouter   = require('./routes/cartRouter');
+var orderRouter  = require('./routes/orderRouter');
+var adminRouter  = require('./routes/adminRouter');
 
 const mongoose = require('mongoose');
-const Dishes = require('./models/dishes');
+const Product = require('./models/product');
 const { signedCookie } = require('cookie-parser');
 
 const url = config.mongoUrl;
@@ -67,11 +68,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 
-app.use('/dishes',dishRouter);
-app.use('/leaders',leadRouter);
-app.use('/promotions',promoRouter);
+app.use('/products',productRouter);
 app.use('/imageUpload',uploadRouter);
 app.use('/favourites',favRouter);
+app.use('/cart',cartRouter);
+app.use('/orders',orderRouter);
+app.use('/admin',adminRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -1,32 +1,33 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const Dishes = require('../models/dishes');
+const Products = require('../models/product');
 var authenticate = require('../authenticate');
 const cors = require('./cors');
 
-const dishRouter = express.Router();
 
-dishRouter.use(bodyParser.json());
+const productRouter = express.Router();
 
-dishRouter.route('/')
+productRouter.use(bodyParser.json());
+
+productRouter.route('/')
 .options(cors.corsWithOptions,(req,res)=>{res.sendStatus(200);})
 .get(cors.cors,(req,res,next)=>{
-    Dishes.find({})
+    Products.find({})
     .populate('comments.author')
-    .then((dishes)=>{
+    .then((products)=>{
         res.statusCode = 200;
         res.setHeader('Content-Type','application/json');
-        res.json(dishes);
+        res.json(products);
     },(err)=>{next(err);})
     .catch((err)=>{next(err);});
 })
 .post(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
-    Dishes.create(req.body)
-    .then((dish)=>{
+    Products.create(req.body)
+    .then((product)=>{
         res.statusCode = 200;
         res.setHeader('Content-Type','application/json');
-        res.json(dish);
+        res.json(product);
 
     },(err)=>next(err))
     .catch((err)=>next(err));
@@ -36,7 +37,7 @@ dishRouter.route('/')
     res.end('put operation not allowed');
 })
 .delete(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
-    Dishes.remove({})
+    Products.remove({})
     .then((resp)=>{
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -46,15 +47,15 @@ dishRouter.route('/')
     
 });
 
-dishRouter.route('/:dishId')
+productRouter.route('/:Id')
 .options(cors.corsWithOptions,(req,res)=>{res.sendStatus(200);})
 .get(cors.cors,(req,res,next)=>{
-    Dishes.findById(req.params.dishId)
+    Products.findById(req.params.Id)
     .populate('comments.author')
-    .then((dish) => {
+    .then((product) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.json(dish);
+        res.json(product);
     }, (err) => next(err))
     .catch((err) => next(err));
 })
@@ -63,18 +64,18 @@ dishRouter.route('/:dishId')
     res.end('operation not allowed');
 })
 .put(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
-    Dishes.findByIdAndUpdate(req.params.dishId, {
+    Products.findByIdAndUpdate(req.params.Id, {
         $set: req.body
     }, { new: true })
-    .then((dish) => {
+    .then((product) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.json(dish);
+        res.json(product);
     }, (err) => next(err))
     .catch((err) => next(err));    
 })
 .delete(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
-    Dishes.findByIdAndRemove(req.params.dishId)
+    Products.findByIdAndRemove(req.params.Id)
     .then((resp) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -83,19 +84,19 @@ dishRouter.route('/:dishId')
     .catch((err) => next(err));
 })
 
-dishRouter.route('/:dishId/comments')
+productRouter.route('/:Id/comments')
 .options(cors.corsWithOptions,(req,res)=>{res.sendStatus(200);})
 .get(cors.cors,(req,res,next)=>{
-    Dishes.findById(req.params.dishId)
+    Products.findById(req.params.Id)
     .populate('comments.author')
-    .then((dish)=>{
-        if(dish!= null){
+    .then((product)=>{
+        if(product!= null){
             res.statusCode = 200;
             res.setHeader('Content-Type','application/json');
-            res.json(dish.comments);
+            res.json(product.comments);
         }
         else{
-            err = new Error('Dish ' + req.params.dishId + ' not found');
+            err = new Error('product ' + req.params.Id + ' not found');
             err.status = 404;
             return next(err);
         }
@@ -104,27 +105,27 @@ dishRouter.route('/:dishId/comments')
     .catch((err)=>{next(err);});
 })
 .post(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
-    Dishes.findById(req.params.dishId)
-    .then((dish)=>{
+    Products.findById(req.params.Id)
+    .then((product)=>{
         
-        if(dish!= null){
+        if(product!= null){
             req.body.author = req.user._id;
-            dish.comments.push(req.body);
-            dish.save()
-            .then((dish)=>{
-                Dishes.findById(dish._id)
+            product.comments.push(req.body);
+            product.save()
+            .then((product)=>{
+                Products.findById(product._id)
                 .populate('comments.author')
-                .then((dish)=>{
+                .then((product)=>{
                     res.statusCode = 200;
                     res.setHeader('Content-Type','application/json');
-                    res.json(dish.comments);
+                    res.json(product.comments);
                 })
                 
             },(err)=>next(err));
             
         }
         else{
-            err = new Error('Dish ' + req.params.dishId + ' not found');
+            err = new Error('product ' + req.params.Id + ' not found');
             err.status = 404;
             return next(err);
         }
@@ -137,26 +138,26 @@ dishRouter.route('/:dishId/comments')
     res.end('put operation not allowed');
 })
 .delete(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
-    Dishes.findById(req.params.dishId)
-    .then((dish)=>{
-        if(dish != null){
-            for (var i = (dish.comments.length -1); i >= 0; i--) {
-                dish.comments.id(dish.comments[i]._id).remove();
+    Products.findById(req.params.Id)
+    .then((product)=>{
+        if(product != null){
+            for (var i = (product.comments.length -1); i >= 0; i--) {
+                product.comments.id(product.comments[i]._id).remove();
             }
-            dish.save()
-            .then((dish)=>{
-                Dishes.findById(dish._id)
+            product.save()
+            .then((product)=>{
+                Products.findById(product._id)
                 .populate('comments.author')
-                .then((dish)=>{
+                .then((product)=>{
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
-                    res.json(dish);
+                    res.json(product);
                 })
                 
             },(err)=>next(err));
         }
         else{
-            err = new Error('Dish ' + req.params.dishId + ' not found');
+            err = new Error('product ' + req.params.Id + ' not found');
             err.status = 404;
             return next(err);
         }
@@ -166,19 +167,19 @@ dishRouter.route('/:dishId/comments')
     
 });
 
-dishRouter.route('/:dishId/comments/:commentId')
+productRouter.route('/:Id/comments/:commentId')
 .options(cors.corsWithOptions,(req,res)=>{res.sendStatus(200);})
 .get(cors.cors,(req,res,next)=>{
-    Dishes.findById(req.params.dishId)
+    Products.findById(req.params.Id)
     .populate('comments.author')
-    .then((dish) => {
-        if(dish!=null && dish.comments.id(req.params.commentId) != null){
+    .then((product) => {
+        if(product!=null && product.comments.id(req.params.commentId) != null){
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.json(dish.comments.id(req.params.commentId));
+            res.json(product.comments.id(req.params.commentId));
         }
-        else if(dish == null){
-            err = new Error('Dish ' + req.params.dishId + ' not found');
+        else if(product == null){
+            err = new Error('product ' + req.params.Id + ' not found');
             err.status = 404;
             return next(err);
         }
@@ -196,36 +197,36 @@ dishRouter.route('/:dishId/comments/:commentId')
     res.end('operation not allowed');
 })
 .put(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
-    Dishes.findById(req.params.dishId)
+    Products.findById(req.params.Id)
     .populate('comments.author')
-    .then((dish) => {
+    .then((product) => {
         
-            if(dish!= null && dish.comments.id(req.params.commentId)!= null){
-                if (dish.comments.id(req.params.commentId).author._id.toString() != req.user._id.toString()) {
+            if(product!= null && product.comments.id(req.params.commentId)!= null){
+                if (product.comments.id(req.params.commentId).author._id.toString() != req.user._id.toString()) {
                     err = new Error('You are not authorized to edit this comment');
                     err.status = 403;
                     return next(err);
                 }
                 if(req.body.rating){
-                    dish.comments.id(req.params.commentId).rating = req.body.rating;
+                    product.comments.id(req.params.commentId).rating = req.body.rating;
                 }
                 if(req.body.comment){
-                    dish.comments.id(req.params.commentId).comment = req.body.comment;
+                    product.comments.id(req.params.commentId).comment = req.body.comment;
                 }
-                dish.save()
-                .then((dish)=>{
-                    Dishes.findById(dish._id)
+                product.save()
+                .then((product)=>{
+                    Products.findById(product._id)
                     .populate('comments.author')
-                    .then((dish)=>{
+                    .then((product)=>{
                         res.statusCode = 200;
                         res.setHeader('Content-Type', 'application/json');
-                        res.json(dish);
+                        res.json(product);
                     })
                     
                 },(err)=>next(err));
             }
-            else if(dish == null){
-                err = new Error('Dish ' + req.params.dishId + ' not found');
+            else if(product == null){
+                err = new Error('product ' + req.params.Id + ' not found');
                 err.status = 404;
                 return next(err);
             }
@@ -239,23 +240,23 @@ dishRouter.route('/:dishId/comments/:commentId')
     .catch((err) => next(err));    
 })
 .delete(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
-    Dishes.findById(req.params.dishId)
-    .then((dish) => {
-        if(dish!= null && dish.comments.id(req.params.commentId)!= null){
-            if (dish.comments.id(req.params.commentId).author._id.toString() != req.user._id.toString()) {
+    Products.findById(req.params.Id)
+    .then((product) => {
+        if(product!= null && product.comments.id(req.params.commentId)!= null){
+            if (product.comments.id(req.params.commentId).author._id.toString() != req.user._id.toString()) {
                 err = new Error('You are not authorized to edit this comment');
                 err.status = 403;
                 return next(err);
             }
-            dish.comments.id(req.params.commentId).remove();
-            dish.save()
-            .then((dish)=>{
-                Dishes.findById(dish._id)
+            product.comments.id(req.params.commentId).remove();
+            product.save()
+            .then((product)=>{
+                Products.findById(product._id)
                 .populate('comments.author')
-                .then((dish)=>{
+                .then((product)=>{
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
-                    res.json(dish);
+                    res.json(product);
                 })
                 
             },(err)=>next(err));
@@ -265,4 +266,4 @@ dishRouter.route('/:dishId/comments/:commentId')
     .catch((err) => next(err));
 })
 
-module.exports = dishRouter;
+module.exports = productRouter;
