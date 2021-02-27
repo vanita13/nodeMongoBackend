@@ -3,11 +3,11 @@ const schema = mongoose.Schema;
 var passportLocalMongoose = require('passport-local-mongoose');
 
 var User = new schema({
-    // name:{
-    //     type:String,
-    //     required:true,
+    name:{
+        type:String,
+        required:true,
 
-    // },
+    },
     admin:{
         type:Boolean,
         default:false
@@ -16,10 +16,18 @@ var User = new schema({
         type:Boolean,
         default:false
     },
-    // address:{
-    //     type:String,
-    //     required:true
-    // },
+    address:{
+        type:String,
+        required:true
+    },
+    pin : {
+      type : Number,
+      required : true
+    },
+    phone : {
+      type : Number,
+      required : true
+    }
     // passwordResetToken :{
     //     type:String
     // },

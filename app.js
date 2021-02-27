@@ -19,6 +19,7 @@ var favRouter    = require('./routes/favRouter');
 var cartRouter   = require('./routes/cartRouter');
 var orderRouter  = require('./routes/orderRouter');
 var adminRouter  = require('./routes/adminRouter');
+var feedbackRouter = require('./routes/feedbackRouter');
 
 const mongoose = require('mongoose');
 const Product = require('./models/product');
@@ -71,10 +72,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 app.use('/products',productRouter);
-app.use('/imageUpload',uploadRouter);
+app.use('/productUpload',uploadRouter);
 app.use('/favourites',favRouter);
 app.use('/cart',cartRouter);
 app.use('/orders',orderRouter);
+app.use('/feedbacks',feedbackRouter);
 app.use('/admin',adminRouter);
 
 // catch 404 and forward to error handler

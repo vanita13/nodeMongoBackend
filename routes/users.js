@@ -28,7 +28,7 @@ router.get('/',cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyA
 router.post('/signup',cors.corsWithOptions,function(req,res,next){
   
   
-  User.register(new User({username: req.body.username}), 
+  User.register(new User({username: req.body.username,name:req.body.name,address:req.body.address,phone:req.body.phone,pin:req.body.pin}), 
     req.body.password, (err, user) => {
     if(err) {
       res.statusCode = 500;
@@ -36,13 +36,12 @@ router.post('/signup',cors.corsWithOptions,function(req,res,next){
       res.json({err: err});
     }
     else {
-      if(req.body.name){
+      
         user.name = req.body.name;
-      }
-      if(req.body.address){
         user.address = req.body.address;
-      }
-      user.save((err,user)=>{
+        user.pin = req.body.pin;
+        user.phone = req.body.phone;
+        user.save((err,user)=>{
         if (err) {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
@@ -57,7 +56,7 @@ router.post('/signup',cors.corsWithOptions,function(req,res,next){
           var transporter = nodemailer.createTransport({ service: "Gmail", 
                   auth: { user: process.env.SENDGRID_USERNAME , 
                           pass: process.env.SENDGRID_PASSWORD } });
-          var mailOptions = { from: "noreply.ebazarsample@gmail.com",
+          var mailOptions = { from: process.env.SENDGRID_USERNAME,
                               to: user.username, 
                               subject: 'Account Verification Token', 
                               text: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttps:\/\/' + req.headers.host + '\/users\/confirmation\/' + token.token + '.\n' };
@@ -99,6 +98,7 @@ router.get('/confirmation/:token',cors.corsWithOptions,function (req, res, next)
           user.save(function (err) {
               if (err) { return res.status(500).send({ msg: err.message }); }
               res.status(200).send("The account has been verified. Please log in.");
+              
           });
       });
   });
@@ -116,11 +116,7 @@ router.post('/login',cors.corsWithOptions,passport.authenticate('local'),(req,re
 router.post('/resend',cors.corsWithOptions,function (req, res, next) {
   req.sanitize('username').normalizeEmail({ remove_dots: false });
 
-  // Check for validation errors    
-  var errors = req.validationErrors();
-  if (errors) return res.status(400).send(errors);
-
-  User.findOne({ email: req.body.email }, function (err, user) {
+  User.findOne({ username: req.body.username }, function (err, user) {
       if (!user) return res.status(400).send({ msg: 'We were unable to find a user with that email.' });
       if (user.isVerified) return res.status(400).send({ msg: 'This account has already been verified. Please log in.' });
 
@@ -134,10 +130,10 @@ router.post('/resend',cors.corsWithOptions,function (req, res, next) {
           // Send the email
           var transporter = nodemailer.createTransport({ service: "Gmail", auth: { user: process.env.SENDGRID_USERNAME , 
                             pass: process.env.SENDGRID_PASSWORD } });
-          var mailOptions = { from: process.env.SENDGRID_USERNAME, to: user.email, subject: 'Account Verification Token', text: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttp:\/\/' + req.headers.host + '\/confirmation\/' + token.token + '.\n' };
+          var mailOptions = { from: process.env.SENDGRID_USERNAME, to: user.username, subject: 'Account Verification Token', text: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttp:\/\/' + req.headers.host + '\/confirmation\/' + token.token + '.\n' };
           transporter.sendMail(mailOptions, function (err) {
               if (err) { return res.status(500).send({ msg: err.message }); }
-              res.status(200).send('A verification email has been sent to ' + user.email + '.');
+              res.status(200).send('A verification email has been sent to ' + user.username + '.');
           });
       });
 
@@ -172,65 +168,65 @@ router.get('/checkJWTToken',cors.corsWithOptions,(req,res,next)=>{
   })(req,res);
 });
 
-router.post('/forgot', function(req, res, next) {
-  async.waterfall([
-    function(done) {
-      crypto.randomBytes(20, function(err, buf) {
-        var token = buf.toString('hex');
-        done(err, token);
-      });
-    },
-    function(token, done) {
-      User.findOne({ username: req.body.username }, function(err, user) {
-        if (!user) {
-        //   console.log('error', 'No account with that email address exists.');
-        req.flash('error', 'No account with that email address exists.');
-          return res.redirect('/forgot');
-        }
-console.log('step 1')
-        user.resetPasswordToken = token;
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+// router.post('/forgot', function(req, res, next) {
+//   async.waterfall([
+//     function(done) {
+//       crypto.randomBytes(20, function(err, buf) {
+//         var token = buf.toString('hex');
+//         done(err, token);
+//       });
+//     },
+//     function(token, done) {
+//       User.findOne({ username: req.body.username }, function(err, user) {
+//         if (!user) {
+//         //   console.log('error', 'No account with that email address exists.');
+//         req.flash('error', 'No account with that email address exists.');
+//           return res.redirect('/forgot');
+//         }
+// console.log('step 1')
+//         user.resetPasswordToken = token;
+//         user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
-        user.save(function(err) {
-          done(err, token, user);
-        });
-      });
-    },
-    function(token, user, done) {
-        console.log('step 2')
+//         user.save(function(err) {
+//           done(err, token, user);
+//         });
+//       });
+//     },
+//     function(token, user, done) {
+//         console.log('step 2')
 
 
-      var smtpTrans = nodemailer.createTransport({
-         service: 'Gmail', 
-         auth: {
-          user: process.env.SENDGRID_USERNAME,
-          pass: process.env.SENDGRID_PASSWORD
-        }
-      });
-      var mailOptions = {
+//       var smtpTrans = nodemailer.createTransport({
+//          service: 'Gmail', 
+//          auth: {
+//           user: process.env.SENDGRID_USERNAME,
+//           pass: process.env.SENDGRID_PASSWORD
+//         }
+//       });
+//       var mailOptions = {
 
-        to: user.email,
-        from: process.env.SENDGRID_USERNAME,
-        subject: 'Node.js Password Reset',
-        text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
-          'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-          'http://' + req.headers.host + '/reset/' + token + '\n\n' +
-          'If you did not request this, please ignore this email and your password will remain unchanged.\n'
+//         to: user.username,
+//         from: process.env.SENDGRID_USERNAME,
+//         subject: 'Node.js Password Reset',
+//         text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+//           'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
+//           'http://' + req.headers.host + '/reset/' + token + '\n\n' +
+//           'If you did not request this, please ignore this email and your password will remain unchanged.\n'
 
-      };
-      console.log('step 3')
+//       };
+//       console.log('step 3')
 
-        smtpTrans.sendMail(mailOptions, function(err) {
-        req.flash('success', 'An e-mail has been sent to ' + user.email + ' with further instructions.');
-        console.log('sent')
-        res.redirect('/forgot');
-});
-}
-  ], function(err) {
-    console.log('this err' + ' ' + err)
-    res.redirect('/');
-  });
-});
+//         smtpTrans.sendMail(mailOptions, function(err) {
+//         req.flash('success', 'An e-mail has been sent to ' + user.username + ' with further instructions.');
+//         console.log('sent')
+//         res.redirect('/forgot');
+// });
+// }
+//   ], function(err) {
+//     console.log('this err' + ' ' + err)
+//     res.redirect('/');
+//   });
+// });
 
 // router.get('/forgot', function(req, res) {
 //   res.render('forgot', {
