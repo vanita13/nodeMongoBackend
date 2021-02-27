@@ -20,10 +20,10 @@ var User = new schema({
     //     type:String,
     //     required:true
     // },
-    passwordResetToken :{
-        type:String
-    },
-    passwordExpires : Date
+    // passwordResetToken :{
+    //     type:String
+    // },
+    // passwordExpires : Date
     
 });
 User.plugin(passportLocalMongoose);

@@ -57,7 +57,7 @@ router.post('/signup',cors.corsWithOptions,function(req,res,next){
           var transporter = nodemailer.createTransport({ service: "Gmail", 
                   auth: { user: process.env.SENDGRID_USERNAME , 
                           pass: process.env.SENDGRID_PASSWORD } });
-          var mailOptions = { from: process.env.SENDGRID_USERNAME,
+          var mailOptions = { from: "noreply.ebazarsample@gmail.com",
                               to: user.username, 
                               subject: 'Account Verification Token', 
                               text: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttps:\/\/' + req.headers.host + '\/users\/confirmation\/' + token.token + '.\n' };
@@ -232,84 +232,84 @@ console.log('step 1')
   });
 });
 
-router.get('/forgot', function(req, res) {
-  res.render('forgot', {
-    User: req.user
-  });
-});
+// router.get('/forgot', function(req, res) {
+//   res.render('forgot', {
+//     User: req.user
+//   });
+// });
 
-router.get('/reset/:token', function(req, res) {
-  User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user) {
-      console.log(user);
-    if (!user) {
-      req.flash('error', 'Password reset token is invalid or has expired.');
-      return res.redirect('/forgot');
-    }
-    res.render('reset', {
-     User: req.user
-    });
-  });
-});
+// router.get('/reset/:token', function(req, res) {
+//   User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user) {
+//       console.log(user);
+//     if (!user) {
+//       req.flash('error', 'Password reset token is invalid or has expired.');
+//       return res.redirect('/forgot');
+//     }
+//     res.render('reset', {
+//      User: req.user
+//     });
+//   });
+// });
 
-app.post('/reset/:token', function(req, res) {
-  async.waterfall([
-    function(done) {
-      User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user, next) {
-        if (!user) {
-          req.flash('error', 'Password reset token is invalid or has expired.');
-          return res.redirect('back');
-        }
-
-
-        user.password = req.body.password;
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpires = undefined;
-        console.log('password' + user.password  + 'and the user is' + user)
-
-user.save(function(err) {
-  if (err) {
-      console.log('here')
-       return res.redirect('back');
-  } else { 
-      console.log('here2')
-    req.logIn(user, function(err) {
-      done(err, user);
-    });
-
-  }
-        });
-      });
-    },
+// app.post('/reset/:token', function(req, res) {
+//   async.waterfall([
+//     function(done) {
+//       User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user, next) {
+//         if (!user) {
+//           req.flash('error', 'Password reset token is invalid or has expired.');
+//           return res.redirect('back');
+//         }
 
 
+//         user.password = req.body.password;
+//         user.resetPasswordToken = undefined;
+//         user.resetPasswordExpires = undefined;
+//         console.log('password' + user.password  + 'and the user is' + user)
+
+// user.save(function(err) {
+//   if (err) {
+//       console.log('here')
+//        return res.redirect('back');
+//   } else { 
+//       console.log('here2')
+//     req.logIn(user, function(err) {
+//       done(err, user);
+//     });
+
+//   }
+//         });
+//       });
+//     },
 
 
 
-    function(user, done) {
-        // console.log('got this far 4')
-      var smtpTrans = nodemailer.createTransport({
-        service: 'Gmail',
-        auth: {
-          user: process.env.SENDGRID_USERNAME,
-          pass: process.env.SENDGRID_PASSWORD
-        }
-      });
-      var mailOptions = {
-        to: user.email,
-        from: process.env.SENDGRID_USERNAME,
-        subject: 'Your password has been changed',
-        text: 'Hello,\n\n' +
-          ' - This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
-      };
-      smtpTrans.sendMail(mailOptions, function(err) {
-        // req.flash('success', 'Success! Your password has been changed.');
-        done(err);
-      });
-    }
-  ], function(err) {
-    res.redirect('/');
-  });
-});
+
+
+//     function(user, done) {
+//         // console.log('got this far 4')
+//       var smtpTrans = nodemailer.createTransport({
+//         service: 'Gmail',
+//         auth: {
+//           user: process.env.SENDGRID_USERNAME,
+//           pass: process.env.SENDGRID_PASSWORD
+//         }
+//       });
+//       var mailOptions = {
+//         to: user.email,
+//         from: process.env.SENDGRID_USERNAME,
+//         subject: 'Your password has been changed',
+//         text: 'Hello,\n\n' +
+//           ' - This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
+//       };
+//       smtpTrans.sendMail(mailOptions, function(err) {
+//         // req.flash('success', 'Success! Your password has been changed.');
+//         done(err);
+//       });
+//     }
+//   ], function(err) {
+//     res.redirect('/');
+//   });
+// });
 
 
 module.exports = router;
