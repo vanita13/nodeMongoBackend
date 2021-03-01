@@ -27,7 +27,7 @@ adminRouter.route('/users')
   adminRouter.route('/orders')
   .get(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
       Order.find({})
-      .populate("cart","cart.products.product")
+      .populate("cart")
       .populate("user")
       .then((orders)=>{
         
@@ -46,6 +46,7 @@ adminRouter.route('/users')
   adminRouter.route('/orders/:orderId')
   .get(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
     Order.findOne({_id:req.params.orderId})
+    .populate('cart','user')
     .then((order)=>{
       res.statusCode = 200;
       res.setHeader('Content-Type','application/json');
@@ -62,10 +63,10 @@ adminRouter.route('/users')
     Order.findById(req.params.orderId)
     .then((order)=>{
       if(req.body.delivered){
-        order.delivered = !order.delivered;
+        order.delivered = req.body.delivered;
       }
       if(req.body.payment){
-        order.payment = !order.payment;
+        order.payment = req.body.payment;
       }
       order.save()
       .then((order)=>{
