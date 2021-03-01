@@ -5,6 +5,7 @@ const Order = require('../models/order');
 var authenticate = require('../authenticate');
 const cors = require('./cors');
 const cart = require('../models/cart');
+const { ExpectationFailed } = require('http-errors');
 
 const orderRouter = express.Router();
 
@@ -14,7 +15,7 @@ orderRouter.route('/')
 .get(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
     //rertreive all orders of specific user
     Order.find({"user" : req.user._id})
-    .populate('cart')
+    .populate('products.product')
     .populate('user')
     .then((orders)=>{
         res.statusCode = 200;
@@ -24,25 +25,32 @@ orderRouter.route('/')
     .catch((err)=>{next(err);});
 }) 
 .post(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
-    const order = new Order({
-        cart : req.body.cart,
-        user : req.user._id,
-        totalAmt: req.body.totalAmt
-
-    })
-    if(req.body.paymentMethod)
-    {
-        order.paymentMethod = req.body.paymentMethod
-    }
-    order.save()
-    .then((order)=>{
-        cart.findOneAndRemove({_id:req.body.cart})
-        res.statusCode = 200;
-        res.setHeader('Content-Type','application/json');
-        res.json(order)
-    },(err)=>{next(err);})
-    .catch((err)=>{next(err);});
-
+    var allProducts = [];
+    cart.findOne({_id:req.body.cart})
+    .populate('cart')
+    .then((resp)=>{
+        const order = new Order({
+            cart : req.body.cart,
+            user : req.user._id,
+            totalAmt: req.body.totalAmt,
+            products : resp.products
+        });
+        
+        if(req.body.paymentMethod)
+        {
+            order.paymentMethod = req.body.paymentMethod
+        }
+        order.save()
+        .then((order)=>{
+            cart.findOneAndRemove({_id:req.body.cart}).exec()
+            res.statusCode = 200;
+            res.setHeader('Content-Type','application/json');
+            res.json(order)
+        },(err)=>{next(err);})
+        .catch((err)=>{next(err);});
+    
+    },(err)=>next(err))
+    .catch((err)=>next(err));
     
 }) //order save
 .put() //only admins
