@@ -42,7 +42,7 @@ orderRouter.route('/')
         }
         order.save()
         .then((order)=>{
-            cart.findOneAndRemove({_id:req.body.cart}).exec()
+            
             res.statusCode = 200;
             res.setHeader('Content-Type','application/json');
             res.json(order)

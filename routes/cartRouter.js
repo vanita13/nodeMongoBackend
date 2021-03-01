@@ -62,7 +62,7 @@ cartRouter.route('/')
     res.end('put operation not allowed');
 })
 .delete(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
-    Cart.delete({})
+    Cart.findOneAndRemove({user:req.user})
     .then((resp)=>{
         res.statusCode = 200;
         res.setHeader('Content-Type','application/json');

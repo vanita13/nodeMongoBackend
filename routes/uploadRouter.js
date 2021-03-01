@@ -57,13 +57,13 @@ uploadRouter.route('/')
             category : productInfo.category,
             price : productInfo.price,
             inStock : productInfo.inStock,
-            image : 'images/'+ req.file.filename
+            image : '/images/'+ req.file.filename
         });
         newProduct.save()
         .then((product)=>{
             res.statusCode = 200;
             res.setHeader('Content-Type','application/json');
-            res.json(req.file);
+            res.json({file:req.file,product:product});
         },(err)=>next(err))
     .catch((err)=>next(err));
     }
