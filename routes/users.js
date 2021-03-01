@@ -33,7 +33,7 @@ router.post('/signup',cors.corsWithOptions,function(req,res,next){
     if(err) {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'application/json');
-      res.json({err: err});
+      res.json( err);
     }
     else {
       
@@ -50,7 +50,7 @@ router.post('/signup',cors.corsWithOptions,function(req,res,next){
         }
         var token = new Token({ _userId: user._id, token: crypto.randomBytes(16).toString('hex') });
         token.save(function (err) {
-          if (err) { return res.status(500).send({ msg: err.message }); }
+          if (err) { return res.status(500).send(err.message ); }
 
           // Send the email
           var transporter = nodemailer.createTransport({ service: "Gmail", 
@@ -61,7 +61,7 @@ router.post('/signup',cors.corsWithOptions,function(req,res,next){
                               subject: 'Account Verification Token', 
                               text: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttps:\/\/' + req.headers.host + '\/users\/confirmation\/' + token.token + '.\n' };
           transporter.sendMail(mailOptions, function (err,next){
-              if (err) { return res.status(500).send({ msg: err.message }); }
+              if (err) { return res.status(500).send( err.message ); }
               res.status(200).send('A verification email has been sent to ' + user.username + '.');
               next(()=>{
                 passport.authenticate('local')(req, res, () => {
@@ -104,12 +104,32 @@ router.get('/confirmation/:token',cors.corsWithOptions,function (req, res, next)
   });
 });
 
-router.post('/login',cors.corsWithOptions,passport.authenticate('local'),(req,res)=>{
+router.post('/login',cors.corsWithOptions,(req,res,next)=>{
+
+  passport.authenticate('local',(err,user,info)=>{
+    if(err)
+    return next(err);
+    if(!user){
+      res.statusCode = 401;
+      res.setHeader('Content-Type','application/json');
+      res.json({status:"login unsucessful",success:false,info:info});
+    }
+    req.logIn(user,(err)=>{
+      if(err){
+        res.statusCode = 401;
+        res.setHeader('Content-Type','application/json');
+        res.json({status:"login unsucessful",success:false,info:info});
+      }
+      if (!req.user.isVerified) return res.status(401).send({ type: 'not-verified', msg: 'Your account has not been verified.' }); 
   var token = authenticate.getToken({_id:req.user._id})
-  if (!req.user.isVerified) return res.status(401).send({ type: 'not-verified', msg: 'Your account has not been verified.' }); 
+  
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
   res.json({success: true,token:token, user:req.user ,status: 'You are successfully logged in!'});
+
+
+    })
+  },(req,res,next))
     
 });
 

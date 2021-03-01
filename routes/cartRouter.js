@@ -5,6 +5,7 @@ const Cart = require('../models/cart');
 var authenticate = require('../authenticate');
 const cors = require('./cors');
 const { ExpectationFailed } = require('http-errors');
+const products = require('../models/product');
 
 const cartRouter = express.Router();
 
@@ -40,9 +41,6 @@ cartRouter.route('/')
                 .catch((err)=>{next(err)});
                     
                 }
-            
-                
-            
             else{
                 //cart doesn't exits then create a new cart for the user
                 const cart = new Cart({
@@ -72,15 +70,23 @@ cartRouter.route('/')
     },(err)=>{next(err);})
     .catch((err)=>{next(err);})
 });
+
+
 cartRouter.route('/:productId')
 .get(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
     res.statusCode = 403;
     res.end("get operation not allowed");
 })
 .put(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
-    Cart.findOne({user:req.user._id})
-    .then((cart)=>{
-        const productExists = cart.products.find(c=>c.product == req.params.productId);
+
+
+
+
+
+
+     Cart.findOne({user:req.user._id})
+     .then((cart)=>{
+        //const productExists = cart.products.find(c=>c.product == req.params.productId);
         // const indexFound = cart.products.findIndex(c=>c.product == req.params.productId);
         // if(indexFound !== -1 && productExists.qnty <= 0){
         //      cart.products.splice(indexFound,1);
@@ -93,17 +99,17 @@ cartRouter.route('/:productId')
         //             res.json(cart);
         //             }
         //else{       
-                    const item = cart.products.find(c=>c.product == req.body.products.product);
-                    if(item){
-                            Cart.findOneAndUpdate({"user":req.user._id,"products.product":req.body.products.product},{
+               const item = cart.products.find(c=>c.product == req.params.productId);
+                if(item){
+                            Cart.findOneAndUpdate({"user":req.user._id,"products.product":req.params.productId},{
                                 "$set":{
                                     "products.$":{
-                                        ...req.body.products,
-                                        qnty : item.qnty + req.body.products.qnty
+                                        product:req.params.productId,
+                                        qnty :  req.body.qnty
                                     }
                                    
                                 }
-                            })
+                            }).exec()
                             .then((product)=>{
                                 product.save();
                                 res.status(200);
@@ -114,8 +120,8 @@ cartRouter.route('/:productId')
                         }
                     },(err)=>{next(err);})
                     .catch((err)=>{next(err);});
-                }
-)
+                 }
+ )
 .delete(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
     Cart.findOneAndUpdate({user:req.user._id},{
         "$pull":{

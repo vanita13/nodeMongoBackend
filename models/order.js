@@ -7,9 +7,17 @@ const orderSchema = new schema({
         type: mongoose.Schema.Types.ObjectId,
         ref:'Cart'
     },
+    totalAmt:{
+        type : Number,
+        required:true
+    },
     user:{
         type: mongoose.Schema.Types.ObjectId,
         ref:'User'
+    },
+    paymentMethod:{
+        type:String,
+        default:'cod'
     },
     delivered:{
         type: Boolean,

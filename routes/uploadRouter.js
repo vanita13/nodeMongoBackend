@@ -5,6 +5,8 @@ const multer = require('multer');
 const { json } = require('express');
 const cors = require('./cors');
 const Products = require('../models/product');
+const fs = require('fs');
+const Img = require('../models/image');
 
 const storage = multer.diskStorage({
     destination:(req,file,cb)=>{
@@ -36,7 +38,12 @@ uploadRouter.route('/')
     res.statusCode = 403;
     res.end('GET operation not supported on /productUpload');
 })
-.post(cors.corsWithOptions,authenticate.verifyUser, authenticate.verifyAdmin, upload.single('imageFile'), (req, res) => {
+.post(cors.corsWithOptions,authenticate.verifyUser, authenticate.verifyAdmin, upload.single('imageFile'), (req, res,next) => {
+    
+    var newImg = new Img;
+    newImg.img.data = fs.readFileSync(req.file.path);
+    newImg.img.path = req.file.path
+    newImg.save();
     
     var productInfo = req.body;
     if(!productInfo.name || !productInfo.description || !productInfo.category || !productInfo.price || !productInfo.inStock){
@@ -50,13 +57,13 @@ uploadRouter.route('/')
             category : productInfo.category,
             price : productInfo.price,
             inStock : productInfo.inStock,
-            image : 'public/images/'+ req.file.originalname
+            image : 'images/'+ req.file.filename
         });
         newProduct.save()
         .then((product)=>{
             res.statusCode = 200;
             res.setHeader('Content-Type','application/json');
-            res.json(product);
+            res.json(req.file);
         },(err)=>next(err))
     .catch((err)=>next(err));
     }
@@ -74,7 +81,8 @@ uploadRouter.route('/')
 uploadRouter.route('/:Id')
 .put(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,upload.single("imageFile"),(req,res,next)=>{
     Products.findByIdAndUpdate(req.params.Id, {
-                $set: req.body
+                $set: req.body,
+                image : '/images/'+req.file.filename
             }, { new: true })
             .then((product) => {
                 res.statusCode = 200;

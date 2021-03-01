@@ -15,6 +15,7 @@ adminRouter.use(bodyParser.json());
 adminRouter.route('/users')
 .get(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,function(req, res, next) {
     User.find({})
+    .populate('user')
     .then((users)=>{
       res.statusCode = 200;
       res.setHeader('Content-Type','application/json');
@@ -26,7 +27,8 @@ adminRouter.route('/users')
   adminRouter.route('/orders')
   .get(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
       Order.find({})
-      .populate("cart")
+      .populate("cart","cart.products.product")
+      .populate("user")
       .then((orders)=>{
         
         res.statusCode = 200;

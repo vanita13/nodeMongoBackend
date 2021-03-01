@@ -25,6 +25,7 @@ const mongoose = require('mongoose');
 const Product = require('./models/product');
 const { signedCookie } = require('cookie-parser');
 
+
 const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
@@ -67,6 +68,7 @@ app.use('/users', usersRouter);
 
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname+'public/images')));
 
 
 
