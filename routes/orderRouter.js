@@ -2,10 +2,12 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const Order = require('../models/order');
+const Product = require('../models/product');
 var authenticate = require('../authenticate');
 const cors = require('./cors');
 const cart = require('../models/cart');
 const { ExpectationFailed } = require('http-errors');
+const products = require('../models/product');
 
 const orderRouter = express.Router();
 
@@ -40,13 +42,25 @@ orderRouter.route('/')
         {
             order.paymentMethod = req.body.paymentMethod
         }
+
+        resp.products.forEach(products => {
+        Product.findOne({_id:products.product}).exec().then((product)=>{
+            
+                product.inStock = product.inStock - products.qnty;
+                product.save()
+            }
+        ,(err)=>next(err))
+        .catch((err)=>next(err));
+    });
+        
         order.save()
         .then((order)=>{
-            
             res.statusCode = 200;
             res.setHeader('Content-Type','application/json');
             res.json(order)
-        },(err)=>{next(err);})
+        },(err)=>{next(err);
+        })
+            
         .catch((err)=>{next(err);});
     
     },(err)=>next(err))

@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const Cart = require('../models/cart');
+const Product = require('../models/product');
 var authenticate = require('../authenticate');
 const cors = require('./cors');
 const { ExpectationFailed } = require('http-errors');
@@ -34,9 +35,9 @@ cartRouter.route('/')
                                    "$push":{
                                     "products":req.body.products
                                     }})
-                .then((product)=>{
+                .then((cart)=>{
                         res.status(200);
-                        res.json(product);
+                        res.json(cart);
                        },(err)=>{next(err);})
                 .catch((err)=>{next(err)});
                     

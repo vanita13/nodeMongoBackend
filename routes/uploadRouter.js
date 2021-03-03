@@ -80,16 +80,30 @@ uploadRouter.route('/')
 
 uploadRouter.route('/:Id')
 .put(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,upload.single("imageFile"),(req,res,next)=>{
-    Products.findByIdAndUpdate(req.params.Id, {
-                $set: req.body,
-                image : '/images/'+req.file.filename
-            }, { new: true })
-            .then((product) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(product);
-            }, (err) => next(err))
-            .catch((err) => next(err));
+    if(req.file){
+        Products.findByIdAndUpdate(req.params.Id, {
+            $set: req.body,
+            image : '/images/'+req.file.filename
+        }, { new: true })
+        .then((product) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(product);
+        }, (err) => next(err))
+        .catch((err) => next(err));
+    }
+    else{
+        Products.findByIdAndUpdate(req.params.Id, {
+            $set: req.body,
+        }, { new: true })
+        .then((product) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(product);
+        }, (err) => next(err))
+        .catch((err) => next(err));
+    }
+    
 });
 
 

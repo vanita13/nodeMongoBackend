@@ -27,29 +27,29 @@ var User = new schema({
     phone : {
       type : Number,
       required : true
-    }
-    // passwordResetToken :{
-    //     type:String
-    // },
-    // passwordExpires : Date
+    },
+    passwordResetToken :{
+        type:String
+    },
+    passwordExpires : Date
     
 });
 User.plugin(passportLocalMongoose);
 
-User.pre('save', function(next) {
-    var user = this;
-    var SALT_FACTOR = 5;
+// User.pre('save', function(next) {
+//     var user = this;
+//     var SALT_FACTOR = 5;
   
-    if (!user.isModified('password')) return next();
+//     if (!user.isModified('password')) return next();
   
-    bcrypt.genSalt(SALT_FACTOR, function(err, salt) {
-      if (err) return next(err);
+//     bcrypt.genSalt(SALT_FACTOR, function(err, salt) {
+//       if (err) return next(err);
   
-      bcrypt.hash(user.password, salt, null, function(err, hash) {
-        if (err) return next(err);
-        user.password = hash;
-        next();
-      });
-    });
-  });
+//       bcrypt.hash(user.password, salt, null, function(err, hash) {
+//         if (err) return next(err);
+//         user.password = hash;
+//         next();
+//       });
+//     });
+//   });
 module.exports = mongoose.model('User',User);

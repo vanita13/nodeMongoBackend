@@ -7,6 +7,7 @@ var authenticate = require('../authenticate');
 const cors = require('./cors');
 var crypto = require('crypto');
 var nodemailer = require('nodemailer');
+var async = require('async');
 
 var passport = require('passport');
 const { use } = require('passport');
@@ -104,34 +105,43 @@ router.get('/confirmation/:token',cors.corsWithOptions,function (req, res, next)
   });
 });
 
-router.post('/login',cors.corsWithOptions,(req,res,next)=>{
-
-  passport.authenticate('local',(err,user,info)=>{
-    if(err)
-    return next(err);
-    if(!user){
-      res.statusCode = 401;
-      res.setHeader('Content-Type','application/json');
-      res.json({status:"login unsucessful",success:false,info:info});
-    }
-    req.logIn(user,(err)=>{
-      if(err){
-        res.statusCode = 401;
-        res.setHeader('Content-Type','application/json');
-        res.json({status:"login unsucessful",success:false,info:info});
-      }
-      if (!req.user.isVerified) return res.status(401).send({ type: 'not-verified', msg: 'Your account has not been verified.' }); 
+router.post('/login',cors.corsWithOptions,passport.authenticate('local'),(req,res)=>{
   var token = authenticate.getToken({_id:req.user._id})
-  
+  if (!req.user.isVerified) return res.status(401).send({ type: 'not-verified', msg: 'Your account has not been verified.' }); 
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
   res.json({success: true,token:token, user:req.user ,status: 'You are successfully logged in!'});
 
-
-    })
-  },(req,res,next))
-    
 });
+
+// router.post('/login',cors.corsWithOptions,(req,res,next)=>{
+
+//   passport.authenticate('local',(err,user,info)=>{
+//     if(err)
+//     return next(err);
+//     if(!user){
+//       res.statusCode = 401;
+//       res.setHeader('Content-Type','application/json');
+//       res.json({status:"login unsucessful",success:false,info:info});
+//     }
+//     req.logIn(user,(err)=>{
+//       if(err){
+//         res.statusCode = 401;
+//         res.setHeader('Content-Type','application/json');
+//         res.json({status:"login unsucessful",success:false,info:info});
+//       }
+//       if (!req.user.isVerified) return res.status(401).send({ type: 'not-verified', msg: 'Your account has not been verified.' }); 
+//   var token = authenticate.getToken({_id:req.user._id})
+  
+//   res.statusCode = 200;
+//   res.setHeader('Content-Type', 'application/json');
+//   res.json({success: true,token:token, user:req.user ,status: 'You are successfully logged in!'});
+
+
+//     })
+//   },(req,res,next))
+    
+// });
 
 router.post('/resend',cors.corsWithOptions,function (req, res, next) {
   req.sanitize('username').normalizeEmail({ remove_dots: false });
@@ -188,144 +198,143 @@ router.get('/checkJWTToken',cors.corsWithOptions,(req,res,next)=>{
   })(req,res);
 });
 
-// router.post('/forgot', function(req, res, next) {
-//   async.waterfall([
-//     function(done) {
-//       crypto.randomBytes(20, function(err, buf) {
-//         var token = buf.toString('hex');
-//         done(err, token);
-//       });
-//     },
-//     function(token, done) {
-//       User.findOne({ username: req.body.username }, function(err, user) {
-//         if (!user) {
-//         //   console.log('error', 'No account with that email address exists.');
-//         req.flash('error', 'No account with that email address exists.');
-//           return res.redirect('/forgot');
-//         }
-// console.log('step 1')
-//         user.resetPasswordToken = token;
-//         user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+router.post('/forgot', function(req, res, next) {
+  async.waterfall([
+    function(done) {
+      crypto.randomBytes(20, function(err, buf) {
+        var token = buf.toString('hex');
+        done(err, token);
+      });
+    },
+    function(token, done) {
+      User.findOne({ username: req.body.username }, function(err, user) {
+        if (!user) {
+        //   console.log('error', 'No account with that email address exists.');
+        req.flash('error', 'No account with that email address exists.');
+          return res.redirect('/forgot');
+        }
+console.log('step 1')
+        user.resetPasswordToken = token;
+        user.resetPasswordExpires = Date.now() + 36000000; // 1 hour
 
-//         user.save(function(err) {
-//           done(err, token, user);
-//         });
-//       });
-//     },
-//     function(token, user, done) {
-//         console.log('step 2')
-
-
-//       var smtpTrans = nodemailer.createTransport({
-//          service: 'Gmail', 
-//          auth: {
-//           user: process.env.SENDGRID_USERNAME,
-//           pass: process.env.SENDGRID_PASSWORD
-//         }
-//       });
-//       var mailOptions = {
-
-//         to: user.username,
-//         from: process.env.SENDGRID_USERNAME,
-//         subject: 'Node.js Password Reset',
-//         text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
-//           'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-//           'http://' + req.headers.host + '/reset/' + token + '\n\n' +
-//           'If you did not request this, please ignore this email and your password will remain unchanged.\n'
-
-//       };
-//       console.log('step 3')
-
-//         smtpTrans.sendMail(mailOptions, function(err) {
-//         req.flash('success', 'An e-mail has been sent to ' + user.username + ' with further instructions.');
-//         console.log('sent')
-//         res.redirect('/forgot');
-// });
-// }
-//   ], function(err) {
-//     console.log('this err' + ' ' + err)
-//     res.redirect('/');
-//   });
-// });
-
-// router.get('/forgot', function(req, res) {
-//   res.render('forgot', {
-//     User: req.user
-//   });
-// });
-
-// router.get('/reset/:token', function(req, res) {
-//   User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user) {
-//       console.log(user);
-//     if (!user) {
-//       req.flash('error', 'Password reset token is invalid or has expired.');
-//       return res.redirect('/forgot');
-//     }
-//     res.render('reset', {
-//      User: req.user
-//     });
-//   });
-// });
-
-// app.post('/reset/:token', function(req, res) {
-//   async.waterfall([
-//     function(done) {
-//       User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user, next) {
-//         if (!user) {
-//           req.flash('error', 'Password reset token is invalid or has expired.');
-//           return res.redirect('back');
-//         }
+        user.save(function(err) {
+          done(err, token, user);
+        });
+      });
+    },
+    function(token, user, done) {
+        console.log('step 2')
 
 
-//         user.password = req.body.password;
-//         user.resetPasswordToken = undefined;
-//         user.resetPasswordExpires = undefined;
-//         console.log('password' + user.password  + 'and the user is' + user)
+      var smtpTrans = nodemailer.createTransport({
+         service: 'Gmail', 
+         auth: {
+          user: process.env.SENDGRID_USERNAME,
+          pass: process.env.SENDGRID_PASSWORD
+        }
+      });
+      var mailOptions = {
 
-// user.save(function(err) {
-//   if (err) {
-//       console.log('here')
-//        return res.redirect('back');
-//   } else { 
-//       console.log('here2')
-//     req.logIn(user, function(err) {
-//       done(err, user);
-//     });
+        to: user.username,
+        from: process.env.SENDGRID_USERNAME,
+        subject: 'Node.js Password Reset',
+        text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+          'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
+          'http://' + req.headers.host + '/users/reset/' + token + '\n\n' +
+          'If you did not request this, please ignore this email and your password will remain unchanged.\n'
 
-//   }
-//         });
-//       });
-//     },
+      };
+      console.log('step 3')
 
+        smtpTrans.sendMail(mailOptions, (err) =>{
+          res.status(200).send('A verification email has been sent to ' + user.username + '.');
+
+          console.log('sent')
+});
+}
+  ], function(err) {
+    console.log('this err' + ' ' + err)
+  });
+});
+
+router.get('/forgot', function(req, res) {
+  res.render('forgot', {
+    User: req.user
+  });
+});
+
+router.get('/reset/:token', function(req, res) {
+  User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user) {
+      console.log(user);
+    if (!user) {
+      req.flash('error', 'Password reset token is invalid or has expired.');
+      return res.redirect('users/forgot');
+    }
+    res.render('reset', {
+
+     User: req.user
+    });
+  });
+});
+
+router.post('/reset/:token', function(req, res) {
+  async.waterfall([
+    function(done) {
+      User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user, next) {
+        if (!user) {
+          req.send('error', 'Password reset token is invalid or has expired.');
+        }
+
+
+        user.password = req.body.password;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        console.log('password' + user.password  + 'and the user is' + user)
+
+user.save(function(err) {
+  if (err) {
+      console.log('here')
+       return res.redirect('back');
+  } else { 
+      console.log('here2')
+    req.logIn(user, function(err) {
+      done(err, user);
+    });
+
+  }
+        });
+      });
+    },
 
 
 
 
-//     function(user, done) {
-//         // console.log('got this far 4')
-//       var smtpTrans = nodemailer.createTransport({
-//         service: 'Gmail',
-//         auth: {
-//           user: process.env.SENDGRID_USERNAME,
-//           pass: process.env.SENDGRID_PASSWORD
-//         }
-//       });
-//       var mailOptions = {
-//         to: user.email,
-//         from: process.env.SENDGRID_USERNAME,
-//         subject: 'Your password has been changed',
-//         text: 'Hello,\n\n' +
-//           ' - This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
-//       };
-//       smtpTrans.sendMail(mailOptions, function(err) {
-//         // req.flash('success', 'Success! Your password has been changed.');
-//         done(err);
-//       });
-//     }
-//   ], function(err) {
-//     res.redirect('/');
-//   });
-// });
+
+    function(user, done) {
+        // console.log('got this far 4')
+      var smtpTrans = nodemailer.createTransport({
+        service: 'Gmail',
+        auth: {
+          user: process.env.SENDGRID_USERNAME,
+          pass: process.env.SENDGRID_PASSWORD
+        }
+      });
+      var mailOptions = {
+        to: user.username,
+        from: process.env.SENDGRID_USERNAME,
+        subject: 'Your password has been changed',
+        text: 'Hello,\n\n' +
+          ' - This is a confirmation that the password for your account ' + user.username + ' has just been changed.\n'
+      };
+      smtpTrans.sendMail(mailOptions, function(err) {
+        // req.flash('success', 'Success! Your password has been changed.');
+        done(err);
+      });
+    }
+  ], function(err) {
+    res.redirect('/');
+  });
+});
 
 
 module.exports = router;
