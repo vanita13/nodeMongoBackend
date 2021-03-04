@@ -42,7 +42,7 @@ orderRouter.route('/')
         {
             order.paymentMethod = req.body.paymentMethod
         }
-
+        //update instock value in product collection 
         resp.products.forEach(products => {
         Product.findOne({_id:products.product}).exec().then((product)=>{
             
@@ -52,7 +52,7 @@ orderRouter.route('/')
         ,(err)=>next(err))
         .catch((err)=>next(err));
     });
-        
+        //save order
         order.save()
         .then((order)=>{
             res.statusCode = 200;

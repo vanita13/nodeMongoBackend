@@ -198,7 +198,7 @@ router.get('/checkJWTToken',cors.corsWithOptions,(req,res,next)=>{
   })(req,res);
 });
 
-router.post('/forgot', function(req, res, next) {
+router.post('/forgot', cors.corsWithOptions,function(req, res, next) {
   async.waterfall([
     function(done) {
       crypto.randomBytes(20, function(err, buf) {
@@ -209,13 +209,13 @@ router.post('/forgot', function(req, res, next) {
     function(token, done) {
       User.findOne({ username: req.body.username }, function(err, user) {
         if (!user) {
-        //   console.log('error', 'No account with that email address exists.');
-        req.flash('error', 'No account with that email address exists.');
-          return res.redirect('/forgot');
+           console.log('error', 'No account with that email address exists.');
+        //req.flash('error', 'No account with that email address exists.');
+          //return res.redirect('/forgot');
         }
 console.log('step 1')
-        user.resetPasswordToken = token;
-        user.resetPasswordExpires = Date.now() + 36000000; // 1 hour
+        user.passwordResetToken = token;
+        user.passwordExpires = Date.now() + 36000000; // 1 hour
 
         user.save(function(err) {
           done(err, token, user);
@@ -240,7 +240,7 @@ console.log('step 1')
         subject: 'Node.js Password Reset',
         text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
           'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-          'http://' + req.headers.host + '/users/reset/' + token + '\n\n' +
+         '\nhttps:\/\/' + req.headers.host + '\/users\/reset\/' + token + '.\n' +
           'If you did not request this, please ignore this email and your password will remain unchanged.\n'
 
       };
@@ -257,49 +257,57 @@ console.log('step 1')
   });
 });
 
-router.get('/forgot', function(req, res) {
+router.get('/forgot',cors.cors, function(req, res) {
   res.render('forgot', {
     User: req.user
   });
 });
 
-router.get('/reset/:token', function(req, res) {
-  User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user) {
+router.get('/reset/:token',cors.cors, function(req, res) {
+  User.findOne({ passwordResetToken: req.params.token, passwordExpires: { $gt: Date.now() } }, function(err, user) {
       console.log(user);
     if (!user) {
-      req.flash('error', 'Password reset token is invalid or has expired.');
-      return res.redirect('users/forgot');
+      res.status(404).send("could not found user!")
+      //req.flash('error', 'Password reset token is invalid or has expired.');
+      //return res.redirect('users/forgot');
+      res.send("token has expired")
     }
-    res.render('reset', {
+    // res.render('reset', {
 
-     User: req.user
-    });
+    //  User: req.user
+    // });
   });
 });
 
-router.post('/reset/:token', function(req, res) {
+router.post('/reset/:token', cors.corsWithOptions,function(req, res) {
   async.waterfall([
     function(done) {
-      User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user, next) {
+      User.findOne({ passwordResetToken: req.params.token, passwordExpires: { $gt: Date.now() } }, function(err, user, next) {
         if (!user) {
-          req.send('error', 'Password reset token is invalid or has expired.');
+          res.send('error', 'Password reset token is invalid or has expired.');
         }
-
-
-        user.password = req.body.password;
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpires = undefined;
-        console.log('password' + user.password  + 'and the user is' + user)
-
-user.save(function(err) {
-  if (err) {
-      console.log('here')
-       return res.redirect('back');
-  } else { 
-      console.log('here2')
-    req.logIn(user, function(err) {
-      done(err, user);
-    });
+        user.setPassword(req.body.password,(err,user)=>{
+          if(err){
+            res.status(400).send("could not change password");
+          }
+          if(user){
+            user.passwordResetToken = undefined;
+            user.passwordExpires = undefined;
+            //console.log('password' + user.password  + 'and the user is' + user);
+            user.save(function(err) {
+              if (err) {
+                res.status(400).send("error occured while changing password")
+                  //console.log('here')
+                   //return res.redirect('back');
+              } else { 
+                  console.log('here2')
+                req.logIn(user, function(err) {
+                  done(err, user);
+                });
+            
+          
+          }
+        });
 
   }
         });
@@ -327,6 +335,7 @@ user.save(function(err) {
           ' - This is a confirmation that the password for your account ' + user.username + ' has just been changed.\n'
       };
       smtpTrans.sendMail(mailOptions, function(err) {
+        res.send("password has been change and confirmation mail has been sent")
         // req.flash('success', 'Success! Your password has been changed.');
         done(err);
       });

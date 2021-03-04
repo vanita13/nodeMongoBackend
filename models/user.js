@@ -8,6 +8,12 @@ var User = new schema({
         required:true,
 
     },
+    username:{
+        type : String,
+    },
+    password:{
+        type:String
+    },
     admin:{
         type:Boolean,
         default:false
@@ -38,16 +44,19 @@ User.plugin(passportLocalMongoose);
 
 // User.pre('save', function(next) {
 //     var user = this;
-//     var SALT_FACTOR = 5;
+//     var SALT_FACTOR = 12;
   
 //     if (!user.isModified('password')) return next();
+//     console.log(user.password);
   
 //     bcrypt.genSalt(SALT_FACTOR, function(err, salt) {
 //       if (err) return next(err);
   
 //       bcrypt.hash(user.password, salt, null, function(err, hash) {
 //         if (err) return next(err);
-//         user.password = hash;
+//         user.salt = salt;
+//         user.hash = hash;
+//         user.password = salt;
 //         next();
 //       });
 //     });
