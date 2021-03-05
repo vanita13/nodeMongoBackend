@@ -61,9 +61,15 @@ uploadRouter.route('/')
         });
         newProduct.save()
         .then((product)=>{
-            res.statusCode = 200;
-            res.setHeader('Content-Type','application/json');
-            res.json({file:req.file,product:product});
+            //product.priceArray[product.priceArray.length - 1].name ='previous';
+            product.priceArray.push({name:'current',amt:product.price})
+            product.save()
+            .then((product)=>{
+                res.statusCode = 200;
+                res.setHeader('Content-Type','application/json');
+                res.json({file:req.file,product:product});
+            },(err)=>next(err))
+            .catch((err)=>next(err));
         },(err)=>next(err))
     .catch((err)=>next(err));
     }
@@ -86,9 +92,18 @@ uploadRouter.route('/:Id')
             image : '/images/'+req.file.filename
         }, { new: true })
         .then((product) => {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.json(product);
+            if(req.body.price){
+                product.priceArray[product.priceArray.length - 1].name ='previous';
+                product.priceArray.push({name:'current',amt:req.body.price})
+                product.save()
+                .then((product)=>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(product);
+                },(err)=>next(err))
+                .catch((err)=>next(err));
+            }
+            
         }, (err) => next(err))
         .catch((err) => next(err));
     }
@@ -97,9 +112,18 @@ uploadRouter.route('/:Id')
             $set: req.body,
         }, { new: true })
         .then((product) => {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.json(product);
+            if(req.body.price){
+                 product.priceArray[product.priceArray.length - 1].name ='previous';
+                //res.json(product.priceArray[product.priceArray.length])
+                product.priceArray.push({name:'current',amt:req.body.price})
+                product.save()
+                .then((product)=>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(product);
+                },(err)=>next(err))
+                .catch((err)=>next(err));
+            }
         }, (err) => next(err))
         .catch((err) => next(err));
     }

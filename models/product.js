@@ -49,7 +49,11 @@ const productSchema = new schema({
         type: Number,
         required: true,
     },
-    comments:[commentSchema]
+    comments:[commentSchema],
+    priceArray : [{
+        name:{type:String,default:'previous'},
+        amt:{type:Number,required:true}
+    }]
 }, {
     timestamps: true
 });

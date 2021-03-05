@@ -11,6 +11,7 @@ var async = require('async');
 
 var passport = require('passport');
 const { use } = require('passport');
+const { exec } = require('child_process');
 
 var router = express.Router();
 router.use(bodyParser.json());
@@ -25,6 +26,19 @@ router.get('/',cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyA
     .catch((err)=>{next(err)
   })
 });
+router.put('/',cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
+  User.findOneAndUpdate({_id : req.user},{
+    "$set":{
+      address:req.body.address,
+      pin:req.body.pin
+    }
+  }).then((user)=>{
+    res.statusCode = 200;
+    res.setHeader('Content-Type','application/json');
+    res.json(user);
+  })
+
+});
 
 router.post('/signup',cors.corsWithOptions,function(req,res,next){
   
@@ -34,7 +48,7 @@ router.post('/signup',cors.corsWithOptions,function(req,res,next){
     if(err) {
       res.statusCode = 500;
       res.setHeader('Content-Type', 'application/json');
-      res.json( err);
+      res.json(err);
     }
     else {
       
@@ -46,7 +60,7 @@ router.post('/signup',cors.corsWithOptions,function(req,res,next){
         if (err) {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
-          res.json({err: err});
+          res.json( err);
           return ;
         }
         var token = new Token({ _userId: user._id, token: crypto.randomBytes(16).toString('hex') });
@@ -344,6 +358,7 @@ router.post('/reset/:token', cors.corsWithOptions,function(req, res) {
     res.redirect('/');
   });
 });
+
 
 
 module.exports = router;
