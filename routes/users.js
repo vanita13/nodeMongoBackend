@@ -12,16 +12,17 @@ var async = require('async');
 var passport = require('passport');
 const { use } = require('passport');
 const { exec } = require('child_process');
+const { resolveSoa } = require('dns');
 
 var router = express.Router();
 router.use(bodyParser.json());
 /* GET users listing. */
-router.get('/',cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,function(req, res, next) {
-  User.find({})
-  .then((users)=>{
+router.get('/',cors.corsWithOptions,authenticate.verifyUser,function(req, res, next) {
+  User.findOne({_id:req.user})
+  .then((user)=>{
     res.statusCode = 200;
     res.setHeader('Content-Type','application/json');
-    res.json(users);
+    res.json(user);
     },(err)=>{next(err);})
     .catch((err)=>{next(err)
   })
@@ -223,9 +224,9 @@ router.post('/forgot', cors.corsWithOptions,function(req, res, next) {
     function(token, done) {
       User.findOne({ username: req.body.username }, function(err, user) {
         if (!user) {
-           console.log('error', 'No account with that email address exists.');
-        //req.flash('error', 'No account with that email address exists.');
-          //return res.redirect('/forgot');
+          // console.log('error', 'No account with that email address exists.');
+        req.flash('error', 'No account with that email address exists.');
+          return res.redirect('/users/forgot');
         }
 console.log('step 1')
         user.passwordResetToken = token;
@@ -251,7 +252,7 @@ console.log('step 1')
 
         to: user.username,
         from: process.env.SENDGRID_USERNAME,
-        subject: 'Node.js Password Reset',
+        subject: 'ebazar Password Reset',
         text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
           'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
          '\nhttps:\/\/' + req.headers.host + '\/users\/reset\/' + token + '.\n' +
@@ -267,7 +268,9 @@ console.log('step 1')
 });
 }
   ], function(err) {
-    console.log('this err' + ' ' + err)
+    if(err) return next(err);
+    res.redirect('/users/forgot');
+    //console.log('this err' + ' ' + err)
   });
 });
 
@@ -281,15 +284,15 @@ router.get('/reset/:token',cors.cors, function(req, res) {
   User.findOne({ passwordResetToken: req.params.token, passwordExpires: { $gt: Date.now() } }, function(err, user) {
       console.log(user);
     if (!user) {
-      res.status(404).send("could not found user!")
-      //req.flash('error', 'Password reset token is invalid or has expired.');
-      //return res.redirect('users/forgot');
-      res.send("token has expired")
+      //res.status(404).send("could not found user!")
+      req.flash('error', 'Password reset token is invalid or has expired.');
+     return res.redirect('users/forgot');
+      //res.send("token has expired")
     }
-    // res.render('reset', {
+     res.render('reset', {
 
-    //  User: req.user
-    // });
+     User: req.user
+    });
   });
 });
 
@@ -298,7 +301,13 @@ router.post('/reset/:token', cors.corsWithOptions,function(req, res) {
     function(done) {
       User.findOne({ passwordResetToken: req.params.token, passwordExpires: { $gt: Date.now() } }, function(err, user, next) {
         if (!user) {
-          res.send('error', 'Password reset token is invalid or has expired.');
+          res.status(401).send('error', 'Password reset token is invalid or has expired.');
+        }
+        if(req.body.password !== req.body.confirm){
+          //var Err = new Error("password and confirm password field does not match");
+          req.flash("error","password and confirm password field does not match");
+          // res.status(400).send('error','passord not matchign cofirmpassword');
+           return res.redirect('back');
         }
         user.setPassword(req.body.password,(err,user)=>{
           if(err){
@@ -312,7 +321,7 @@ router.post('/reset/:token', cors.corsWithOptions,function(req, res) {
               if (err) {
                 res.status(400).send("error occured while changing password")
                   //console.log('here')
-                   //return res.redirect('back');
+                   return res.redirect('back');
               } else { 
                   console.log('here2')
                 req.logIn(user, function(err) {
@@ -349,8 +358,8 @@ router.post('/reset/:token', cors.corsWithOptions,function(req, res) {
           ' - This is a confirmation that the password for your account ' + user.username + ' has just been changed.\n'
       };
       smtpTrans.sendMail(mailOptions, function(err) {
-        res.send("password has been change and confirmation mail has been sent")
-        // req.flash('success', 'Success! Your password has been changed.');
+        //res.send("password has been change and confirmation mail has been sent")
+        req.flash('success', 'Success! Your password has been changed.');
         done(err);
       });
     }

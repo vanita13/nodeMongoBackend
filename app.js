@@ -9,6 +9,7 @@ var passport = require('passport');
 var authenticate = require('./authenticate');
 var config = require('./config');
 require('dotenv').config();
+var flash = require('express-flash');
 
 
 var indexRouter = require('./routes/index');
@@ -63,6 +64,7 @@ app.use(session({
   store:new fileStore()
 
 }));
+app.use(flash());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
