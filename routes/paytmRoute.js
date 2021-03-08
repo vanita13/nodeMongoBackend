@@ -107,6 +107,7 @@ var paytmChecksum = "";
         .then((order)=>{
             res.statusCode = 200;
             res.setHeader('Content-Type','application/json');
+            cart.findOneAndDelete({_id:order.cart})
             req.flash({order:order,msg:post_data.RESPMSG});
             return res.redirect('order')
         },(err)=>{next(err);
