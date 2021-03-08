@@ -336,12 +336,7 @@ router.post('/reset/:token', cors.corsWithOptions,function(req, res) {
         });
       });
     },
-
-
-
-
-
-    function(user, done) {
+      function(user, done) {
         // console.log('got this far 4')
       var smtpTrans = nodemailer.createTransport({
         service: 'Gmail',

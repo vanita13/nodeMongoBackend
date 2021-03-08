@@ -27,7 +27,7 @@ orderRouter.route('/')
     .catch((err)=>{next(err);});
 }) 
 .post(cors.corsWithOptions,authenticate.verifyUser,(req,res,next)=>{
-    var allProducts = [];
+    
     cart.findOne({_id:req.body.cart})
     .populate('cart')
     .then((resp)=>{

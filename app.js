@@ -21,6 +21,7 @@ var cartRouter   = require('./routes/cartRouter');
 var orderRouter  = require('./routes/orderRouter');
 var adminRouter  = require('./routes/adminRouter');
 var feedbackRouter = require('./routes/feedbackRouter');
+var paytmRouter = require('./routes/paytmRoute');
 
 const mongoose = require('mongoose');
 const Product = require('./models/product');
@@ -82,6 +83,7 @@ app.use('/cart',cartRouter);
 app.use('/orders',orderRouter);
 app.use('/feedbacks',feedbackRouter);
 app.use('/admin',adminRouter);
+app.use('/api',paytmRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
