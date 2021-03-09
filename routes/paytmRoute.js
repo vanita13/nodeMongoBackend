@@ -6,17 +6,15 @@ const https=require('https')
 const checksum_lib = require('./checksum.js');
 const PaytmChecksum = require('./PaytmChecksum.js');
 var Order = require('../models/order');
-var cart = require('../models/cart');
+var Cart = require('../models/cart');
 var Product = require('../models/product');
 
-
-
-router.post('/callback',(req,res)=>
+router.post('/callback',(req,res,next)=>
 {
 
 var paytmChecksum = "";
     var received_data = req.body;
-    
+    console.log(req.body)
     var paytmParams = {};
     for(var key in received_data){
         if(key == "CHECKSUMHASH") {
@@ -38,6 +36,8 @@ var paytmChecksum = "";
         var paytmParams = {};
         paytmParams["MID"]     = received_data['MID'];
         paytmParams["ORDERID"] = received_data['ORDERID'];
+        paytmParams["PAYMENTMODE"] = received_data['PAYMENTMODE'];
+        paytmParams["TXNAMOUNT"] = received_data['TXNAMOUNT'];
 
         /*
         * Generate checksum by parameters we have
@@ -77,17 +77,18 @@ var paytmChecksum = "";
                     res.json(JSON.parse(response))
                 });
             });
-    cart.findOne({_id:post_data.ORDERID})
-    .populate('cart')
+    Cart.findOne({_id:paytmParams['ORDERID']})
+    .populate('Cart')
     .then((resp)=>{
         const order = new Order({
-            cart : post_data.ORDERID,
-            user : paytmParams['CUST_ID'],
-            totalAmt: post_data.TXNAMOUNT,
+            cart : paytmParams['ORDERID'],
+            user : resp.user,
+            totalAmt: paytmParams["TXNAMOUNT"],
             products : resp.products,
-            paymentMethod: post_data.PAYMENTMETHOD
+            paymentMethod: paytmParams["PAYMENTMODE"],
+            payment:"true"
         });
-        
+
         // if(req.body.paymentMethod)
         // {
         //     order.paymentMethod = req.body.paymentMethod
@@ -95,7 +96,7 @@ var paytmChecksum = "";
         //update instock value in product collection 
         resp.products.forEach(products => {
         Product.findOne({_id:products.product}).exec().then((product)=>{
-            
+
                 product.inStock = product.inStock - products.qnty;
                 product.save()
             }
@@ -107,21 +108,20 @@ var paytmChecksum = "";
         .then((order)=>{
             res.statusCode = 200;
             res.setHeader('Content-Type','application/json');
-            cart.findOneAndDelete({_id:order.cart})
-            req.flash({order:order,msg:post_data.RESPMSG});
+            req.flash('messages',post_data.RESPMSG);
             return res.redirect('order')
         },(err)=>{next(err);
         })
-            
+
         .catch((err)=>{next(err);});
-    
+
     },(err)=>next(err))
     .catch((err)=>next(err));
-            post_req.write(post_data);
-            post_req.end();
+           // post_req.write(post_data);
+           // post_req.end();
         });        
-        
-        
+
+
     } else {
         console.log("Checksum Mismatched");
         res.json({
@@ -149,7 +149,7 @@ var params = {};
         params['ORDER_ID'] = cart,
         params['CUST_ID'] = user,
         params['TXN_AMOUNT'] = totalAmount,
-        params['CALLBACK_URL'] = 'https://localhost:3443/api/callback',
+        params['CALLBACK_URL'] = 'https://localhost:3445/api/callback',
         params['EMAIL'] = email,
         params['MOBILE_NO'] = '+917777777777';
 
@@ -168,6 +168,10 @@ paytmChecksum.then(function(checksum){
 	console.log(error);
 });
 
+});
+
+router.get('/order',(req,res,next)=>{
+    res.render('order',next(err))
 })
 
 module.exports=router;
